@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تحلیل پیشرفت تحصیلی | دبستان پروین اعتصامی</title>
+<meta name="theme-color" content="#6366f1">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="css/style.css">
+<link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-content">
+    <div class="school-brand">
+      <div class="logo-circle">🏫</div>
+      <div>
+        <h1>دبستان پروین اعتصامی</h1>
+        <p class="subtitle">سیستم تحلیل پیشرفت تحصیلی</p>
+      </div>
+    </div>
+    <div class="header-info">
+      <div class="info-badge">📚 کلاس: <strong>سوم 1</strong></div>
+      <div class="info-badge">👩‍🏫 معلم: <strong>محدثه موسوی</strong></div>
+      <div class="info-badge">📅 <strong>1405/1406</strong></div>
+    </div>
+    <div class="header-actions">
+      <button id="btnInstall" class="btn-icon" title="نصب" hidden>⬇️</button>
+      <button id="btnPrint" class="btn-icon" title="چاپ">🖨️</button>
+      <button id="btnExportHTML" class="btn-icon" title="خروجی HTML">💾</button>
+      <button id="btnExportShad" class="btn-icon" title="خروجی شاد">📤</button>
+      <button id="btnDarkMode" class="btn-icon" title="حالت شب">🌙</button>
+      <button id="btnReset" class="btn-icon" title="بازگشت">🔄</button>
+    </div>
+  </div>
+</header>
+
+<section id="uploadSection" class="upload-section">
+  <div class="upload-card" id="dropZone">
+    <div class="upload-icon">📊</div>
+    <h2>فایل اکسل آزمون‌ها را بارگذاری کنید</h2>
+    <p>می‌توانید چند فایل آزمون را همزمان انتخاب کنید تا روند رشد مقایسه شود</p>
+    <label class="btn-primary">
+      <input type="file" id="fileInput" accept=".xlsx,.xls" multiple hidden>
+      انتخاب فایل(ها)
+    </label>
+    <button id="btnDemo" class="btn-secondary">استفاده از داده نمونه</button>
+
+    <div class="excel-guide">
+      <h4>📋 ساختار فایل اکسل شما شناسایی شد:</h4>
+      <div class="guide-pills">
+        <span class="pill">ردیف</span>
+        <span class="pill">نام و نام خانوادگی</span>
+        <span class="pill">نام امتحان</span>
+        <span class="pill">سوال 1 تا 9</span>
+        <span class="pill">جمع کل سوالات</span>
+        <span class="pill">نمره کل</span>
+      </div>
+      <p class="guide-note">✅ برای مقایسه روند رشد، فایل‌های آزمون‌های دیگر (میان‌ترم، پایان‌ترم) را نیز اضافه کنید.</p>
+    </div>
+  </div>
+</section>
+
+<main id="dashboard" class="dashboard" hidden>
+
+  <!-- KPI Cards -->
+  <section class="kpi-grid">
+    <div class="kpi-card gradient-1">
+      <div class="kpi-icon">👥</div>
+      <div class="kpi-data">
+        <span class="kpi-value" id="kpiStudents">0</span>
+        <span class="kpi-label">تعداد دانش‌آموزان</span>
+      </div>
+    </div>
+    <div class="kpi-card gradient-2">
+      <div class="kpi-icon">📈</div>
+      <div class="kpi-data">
+        <span class="kpi-value" id="kpiAvg">0</span>
+        <span class="kpi-label">میانگین کلاس (از 20)</span>
+      </div>
+    </div>
+    <div class="kpi-card gradient-3">
+      <div class="kpi-icon">🏆</div>
+      <div class="kpi-data">
+        <span class="kpi-value" id="kpiTop">-</span>
+        <span class="kpi-label">دانش‌آموز برتر</span>
+      </div>
+    </div>
+    <div class="kpi-card gradient-4">
+      <div class="kpi-icon">📝</div>
+      <div class="kpi-data">
+        <span class="kpi-value" id="kpiExams">0</span>
+        <span class="kpi-label">تعداد آزمون‌ها</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tabs -->
+  <nav class="tabs-nav">
+    <button class="tab-btn active" data-tab="overview">📊 نمای کلی</button>
+    <button class="tab-btn" data-tab="students">👨‍🎓 دانش‌آموزان</button>
+    <button class="tab-btn" data-tab="questions">❓ تحلیل سوالی</button>
+    <button class="tab-btn" data-tab="compare">🔄 مقایسه آزمون‌ها</button>
+    <button class="tab-btn" data-tab="growth">📈 روند رشد</button>
+  </nav>
+
+  <!-- Tab: Overview -->
+  <section class="tab-content active" id="tab-overview">
+    <div class="chart-row">
+      <div class="chart-card">
+        <h3>📊 میانگین سوالات کلاس</h3>
+        <canvas id="chartQuestions"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>🎯 توزیع سطح نمرات</h3>
+        <canvas id="chartDistribution"></canvas>
+      </div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-card wide">
+        <h3>🏆 رتبه‌بندی دانش‌آموزان</h3>
+        <canvas id="chartRanking"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tab: Students -->
+  <section class="tab-content" id="tab-students">
+    <div class="search-bar">
+      <input type="text" id="searchStudent" placeholder="🔍 جستجوی دانش‌آموز...">
+    </div>
+    <div id="studentsList" class="students-grid"></div>
+  </section>
+
+  <!-- Tab: Questions -->
+  <section class="tab-content" id="tab-questions">
+    <div class="chart-row">
+      <div class="chart-card wide">
+        <h3>📉 نقاط ضعف و قوت کلاس (میانگین هر سوال)</h3>
+        <canvas id="chartQuestionAnalysis"></canvas>
+      </div>
+    </div>
+    <div id="questionsTable" class="questions-table"></div>
+  </section>
+
+  <!-- Tab: Compare -->
+  <section class="tab-content" id="tab-compare">
+    <div class="chart-row">
+      <div class="chart-card wide">
+        <h3>🔄 مقایسه میانگین کلاس در آزمون‌ها</h3>
+        <canvas id="chartCompare"></canvas>
+      </div>
+    </div>
+    <div id="compareTable" class="compare-container"></div>
+  </section>
+
+  <!-- Tab: Growth -->
+  <section class="tab-content" id="tab-growth">
+    <div class="chart-row">
+      <div class="chart-card wide">
+        <h3>📈 روند رشد/افت هر دانش‌آموز</h3>
+        <canvas id="chartGrowth"></canvas>
+      </div>
+    </div>
+    <div id="growthList" class="growth-list"></div>
+  </section>
+
+</main>
+
+<div id="studentModal" class="modal">
+  <div class="modal-content">
+    <button class="modal-close" id="modalClose">×</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="js/data.js"></script>
+<script src="js/excel.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/export.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
